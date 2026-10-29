@@ -1,0 +1,93 @@
+# Release: compila os três apps e publica a release no GitHub com os arquivos principais.
+#
+# Dispara de três jeitos:
+#   - ao entrar na main um arquivo de notas novo, docs/releases/vX.Y.Z.md (o jeito normal:
+#     escrever as notas é lançar a versão; a tag é criada aqui);
+#   - ao enviar uma tag vX.Y.Z (as notas precisam existir em docs/releases/);
+#   - à mão, em Actions → Release → Run workflow, informando a versão.
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths: ["docs/releases/v*.md"]
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Versão (ex.: v1.0.0); as notas ficam em docs/releases/<versão>.md"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  versao:
+    name: Qual versão
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then
+            tag="$INPUT_TAG"
+          elif [ "$GITHUB_REF_TYPE" = tag ]; then
+            tag="$GITHUB_REF_NAME"
+          else
+            # notas novas ou editadas neste push (a release só é criada se ainda não existir)
+            tag=$(git diff --diff-filter=AM --name-only "$BEFORE" "$GITHUB_SHA" -- 'docs/releases/v*.md' 2>/dev/null \
+                  | sed 's#docs/releases/##; s#\.md$##' | sort -V | tail -1)
+          fi
+          if [ -z "$tag" ]; then echo "Nenhuma versão nova neste push."; exit 0; fi
+          [ -f "docs/releases/$tag.md" ] || { echo "::error::faltam as notas em docs/releases/$tag.md"; exit 1; }
+          if gh release view "$tag" >/dev/null 2>&1; then echo "A release $tag já existe."; exit 0; fi
+          echo "Versão: $tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+  mac-ps5:
+    name: Mac e PS5
+    needs: versao
+    if: needs.versao.outputs.tag != ''
+    uses: ./.github/workflows/mac-ps5.yml
+
+  switch:
+    name: Switch
+    needs: versao
+    if: needs.versao.outputs.tag != ''
+    uses: ./.github/workflows/switch.yml
+
+  publicar:
+    name: Publicar a release
+    needs: [versao, mac-ps5, switch]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          path: artefatos
+      - name: Arquivos da release
+        run: |
+          mkdir dist
+          cp artefatos/Ponte-Mac/Ponte-Mac.zip dist/
+          cp artefatos/Ponte-PS5/ponte.elf dist/
+          cp artefatos/Ponte-Switch/ponte.nro dist/
+          (cd dist && sha256sum * > SHA256SUMS.txt)
+          # licenças: 0BSD para o Ponte; GPLv3 para o ponte.nro (motor do Sphaira), com o código em switch/app/
+          cp LICENSE dist/LICENSE-0BSD.txt
+          cp switch/app/LICENSE dist/LICENSE-GPL-3.0-ponte-nro.txt
+          ls -l dist
+      - name: Publicar
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.versao.outputs.tag }}
+        run: |
+          # cria a tag no commit que foi compilado, se ela ainda não existir
+          gh release create "$TAG" dist/* --title "Ponte $TAG" --notes-file "docs/releases/$TAG.md" --target "$GITHUB_SHA"

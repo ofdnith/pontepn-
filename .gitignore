@@ -1,0 +1,13 @@
+.DS_Store
+build/
+*.elf
+*.nro
+*.nacp
+DerivedData/
+__pycache__/
+*.ponte-tmp
+.pytest_cache/
+*.pyc
+.build/
+.swiftpm/
+*.xcodeproj/xcuserdata/

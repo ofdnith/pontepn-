@@ -1,0 +1,79 @@
+# Referência em Python, app do Mac (Swift) e payload do PS5. Gera Ponte-Mac e Ponte-PS5.
+name: Mac e PS5
+
+on:
+  push:
+    # só branches: a tag de versão roda pelo release.yml
+    branches: ["**"]
+  pull_request:
+  # chamado pelo release.yml ao enviar uma tag de versão
+  workflow_call:
+
+jobs:
+  reference:
+    name: Referência (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - run: python -m pytest reference/tests -q
+      - run: python tools/conformance.py --server python
+
+  mac:
+    name: Mac (Swift)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v5
+      # erros e falhas também viram anotações, que aparecem na página do PR sem abrir o log
+      - name: Compilar (núcleo, servidor, linha de comando e app)
+        working-directory: mac
+        run: |
+          set -o pipefail
+          swift build 2>&1 | tee build.log || { grep -E "error:" build.log | sort -u | head -50 | sed 's/^/::error::/'; exit 1; }
+      - name: Testes Swift
+        working-directory: mac
+        run: |
+          set -o pipefail
+          swift test 2>&1 | tee test.log || { grep -E "error:|failed" test.log | sort -u | head -50 | sed 's/^/::error::/'; exit 1; }
+      - name: Conformidade do protocolo
+        run: python3 tools/conformance.py --server swift
+      - name: Payload do PS5 (versão de teste) contra o servidor Swift
+        run: make -C ps5 host && python3 ps5/tests/test_payload.py --server swift
+      - name: Montar Ponte.app
+        working-directory: mac
+        run: ./scripts/build-app.sh
+      # o app pronto, para baixar na página da execução (Actions → execução → Artifacts)
+      - name: Publicar Ponte-Mac
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ponte-Mac
+          path: mac/build/Ponte-Mac.zip
+          retention-days: 30
+
+  ps5:
+    name: PS5 (payload)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Ferramentas
+        run: sudo apt-get update -q && sudo apt-get install -y -q clang-18 lld-18
+      - name: SDK de payloads do PS5
+        run: |
+          wget -q https://github.com/ps5-payload-dev/sdk/releases/latest/download/ps5-payload-sdk.zip
+          sudo unzip -q -d /opt ps5-payload-sdk.zip
+      - name: Compilar ponte.elf
+        env:
+          PS5_PAYLOAD_SDK: /opt/ps5-payload-sdk
+        run: make -C ps5
+      - name: Payload (versão de teste) contra a referência em Python
+        run: make -C ps5 host && python3 ps5/tests/test_payload.py
+      # o payload pronto, para baixar na página da execução (Actions → execução → Artifacts)
+      - name: Publicar Ponte-PS5
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ponte-PS5
+          path: ps5/build/ponte.elf
+          retention-days: 30

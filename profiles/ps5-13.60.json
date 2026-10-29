@@ -1,0 +1,15 @@
+{
+  "platform": "ps5",
+  "firmware": "13.60",
+  "description": "kstuff + ShadowMountPlus + etaHEN, homebrew habilitado a cada boot",
+  "kinds": {
+    "exfat":      {"status": "ok"},
+    "ffpkg":      {"status": "ok"},
+    "folder":     {"status": "ok", "note": "alguns títulos só rodam a partir de USB"},
+    "ffpfs":      {"status": "experimental", "note": "suporte experimental no ShadowMountPlus"},
+    "ffpfsc":     {"status": "experimental", "note": "suporte experimental no ShadowMountPlus"},
+    "pkg_ps4":    {"status": "ok"},
+    "pkg_ps5":    {"status": "blocked", "note": "pacote .pkg de PS5 não roda neste firmware"},
+    "folder_ps4": {"status": "unknown", "note": "carregador para pastas de PS4 a confirmar"}
+  }
+}
