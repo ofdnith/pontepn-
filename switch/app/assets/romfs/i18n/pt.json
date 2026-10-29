@@ -1390,5 +1390,15 @@
   "Ponte will close now. Open it again from the homebrew menu.": "O Ponte vai fechar agora. Abra de novo pelo menu de homebrew.",
   "No copy of the homebrew menu was found on the card.\n\nOn a computer, copy hbmenu.nro (from switchbrew/nx-hbmenu) or sphaira.nro to the root of the card as /hbmenu.nro.": "Nenhuma cópia do menu de homebrew foi encontrada no cartão.\n\nNo computador, copie o hbmenu.nro (do switchbrew/nx-hbmenu) ou o sphaira.nro para a raiz do cartão com o nome /hbmenu.nro.",
   "HOME: the copy keeps going. Opening another game closes Ponte.": "HOME: a cópia continua. Abrir outro jogo fecha o Ponte.",
-  "Opened from the Album: the copy pauses on the HOME menu.": "Aberto pelo Álbum: no menu HOME a cópia fica pausada."
+  "Opened from the Album: the copy pauses on the HOME menu.": "Aberto pelo Álbum: no menu HOME a cópia fica pausada.",
+  "Nothing was installed: ": "Nada foi instalado: ",
+  "Nothing was installed: no content found in the file": "Nada foi instalado: nenhum conteúdo encontrado no arquivo",
+  "Already installed (same version)": "já está instalado (mesma versão)",
+  "A newer update is already installed": "já há uma atualização mais nova instalada",
+  "Unknown content type": "tipo de conteúdo desconhecido",
+  "Not selected": "não selecionado",
+  "\"Skip base\" is on in the install options": "a opção \"pular base\" está ligada nas opções de instalação",
+  "\"Skip patch\" is on in the install options": "a opção \"pular atualização\" está ligada nas opções de instalação",
+  "\"Skip addon\" is on in the install options": "a opção \"pular DLC\" está ligada nas opções de instalação",
+  "\"Skip data patch\" is on in the install options": "a opção \"pular data patch\" está ligada nas opções de instalação"
 }

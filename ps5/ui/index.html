@@ -175,6 +175,16 @@
           <input type="checkbox" id="notifyToggle" style="width:1.3rem;height:1.3rem;min-height:0"> Avisar na tela a cada 25%
         </label>
         <details class="muted" style="margin-top:.6rem">
+          <summary>Montador (ShadowMountPlus)</summary>
+          <p>Depois de cada cópia para <code>homebrew/</code>, o Ponte pede ao montador uma varredura nova, pela API local dele. Deixe vazio para não pedir.</p>
+          <div class="row">
+            <label for="mounterInput">Endereço da varredura</label>
+            <input id="mounterInput" placeholder="127.0.0.1:10101/api/v1/scan" style="flex:1;min-width:12rem">
+            <button id="saveMounterBtn">Salvar</button>
+          </div>
+          <div id="mounterMsg"></div>
+        </details>
+        <details class="muted" style="margin-top:.6rem">
           <summary>Está lento?</summary>
           <ul>
             <li>Cabo de rede no PS5 e no Mac rende muito mais que Wi-Fi. No Wi-Fi, prefira a rede de 5 GHz e deixe o PS5 perto do roteador.</li>
@@ -314,7 +324,8 @@ function renderStatus() {
   renderJobs(s.jobs || []);
   if (s.settings && document.activeElement !== $("notifyToggle")) $("notifyToggle").checked = !!s.settings.notify_progress;
   if (s.settings && !state.tuneLoaded) {
-    $("rcvbufInput").value = s.settings.rcvbuf_kb; $("chunkInput").value = s.settings.chunk_kb; state.tuneLoaded = true; }
+    $("rcvbufInput").value = s.settings.rcvbuf_kb; $("chunkInput").value = s.settings.chunk_kb;
+    $("mounterInput").value = s.settings.mounter_rescan || ""; state.tuneLoaded = true; }
   if (ready && !state.catalog && !state.loadingCatalog) loadCatalog();
 }
 
@@ -671,6 +682,10 @@ document.addEventListener("click", function (ev) {
     var stg = $("storage").value || "internal";
     setText($("diagMsg"), "Disco: gravando em " + ($("storage").selectedOptions && $("storage").selectedOptions[0] ? $("storage").selectedOptions[0].textContent : stg) + ".");
     runDiag([diskStep(stg, 16), diskStep(stg, 256), diskStep(stg, 4096)]);
+  } else if (t.id === "saveMounterBtn") {
+    api("POST", "/api/settings", { mounter_rescan: $("mounterInput").value.trim() })
+      .then(function (s) { $("mounterInput").value = s.mounter_rescan;
+        setText($("mounterMsg"), s.mounter_rescan ? "Salvo: a próxima cópia pede a varredura em " + s.mounter_rescan + "." : "Salvo: o Ponte não pede mais a varredura."); });
   } else if (t.id === "saveTuneBtn") {
     api("POST", "/api/settings", { rcvbuf_kb: +$("rcvbufInput").value, chunk_kb: +$("chunkInput").value })
       .then(function (s) { $("rcvbufInput").value = s.rcvbuf_kb; $("chunkInput").value = s.chunk_kb;

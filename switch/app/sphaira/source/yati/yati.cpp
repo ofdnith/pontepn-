@@ -370,6 +370,8 @@ struct Yati {
 
     std::unique_ptr<container::Base> container{};
     Config config{};
+    // Ponte: por que o último conteúdo foi pulado (para o Outcome).
+    std::string skip_reason{};
     keys::Keys keys{};
 
     // tracks what Setup() actually managed to acquire. these services are
@@ -908,7 +910,7 @@ Yati::~Yati() {
 Result Yati::Setup(const ConfigOverride& override) {
     config.sd_card_install = override.sd_card_install.value_or(App::GetApp()->m_install_sd.Get());
     config.allow_downgrade = App::GetApp()->m_allow_downgrade.Get();
-    config.skip_if_already_installed = App::GetApp()->m_skip_if_already_installed.Get();
+    config.skip_if_already_installed = override.skip_if_already_installed.value_or(App::GetApp()->m_skip_if_already_installed.Get());
     config.ticket_only = App::GetApp()->m_ticket_only.Get();
     config.skip_base = App::GetApp()->m_skip_base.Get();
     config.skip_patch = App::GetApp()->m_skip_patch.Get();
@@ -1211,6 +1213,7 @@ Result Yati::GetLatestVersion(const CnmtCollection& cnmt, u32& version_out, bool
                 if (key.id == cnmt.key.id && cnmt.key.version == key.version && config.skip_if_already_installed) {
                     log_write("skipping as already installed\n");
                     skip = true;
+                    skip_reason = "Already installed (same version)";
                 }
 
                 // check if we are downgrading
@@ -1218,6 +1221,7 @@ Result Yati::GetLatestVersion(const CnmtCollection& cnmt, u32& version_out, bool
                     if (cnmt.key.type == key.type && cnmt.key.version < key.version && !config.allow_downgrade) {
                         log_write("skipping due to it being lower\n");
                         skip = true;
+                        skip_reason = "A newer update is already installed";
                     }
                 } else {
                     version_out = std::max(version_out, key.version);
@@ -1236,6 +1240,7 @@ Result Yati::ShouldSkip(const CnmtCollection& cnmt, bool& skip) {
         if (has) {
             log_write("\tskipping: [ncmContentMetaDatabaseHas()]\n");
             skip = true;
+            skip_reason = "Already installed (same version)";
         }
     }
 
@@ -1244,21 +1249,27 @@ Result Yati::ShouldSkip(const CnmtCollection& cnmt, bool& skip) {
         if (!(cnmt.key.type & 0x80)) {
             log_write("\tskipping: invalid: %u\n", cnmt.key.type);
             skip = true;
+            skip_reason = "Unknown content type";
         } else if (!config.title_ids.empty() && std::ranges::find(config.title_ids, cnmt.key.id) == config.title_ids.end()) {
             log_write("\tskipping: not selected: %016lX\n", cnmt.key.id);
             skip = true;
+            skip_reason = "Not selected";
         } else if (config.skip_base && cnmt.key.type == NcmContentMetaType_Application) {
             log_write("\tskipping: [NcmContentMetaType_Application]\n");
             skip = true;
+            skip_reason = "\"Skip base\" is on in the install options";
         } else if (config.skip_patch && cnmt.key.type == NcmContentMetaType_Patch) {
             log_write("\tskipping: [NcmContentMetaType_Application]\n");
             skip = true;
+            skip_reason = "\"Skip patch\" is on in the install options";
         } else if (config.skip_addon && cnmt.key.type == NcmContentMetaType_AddOnContent) {
             log_write("\tskipping: [NcmContentMetaType_AddOnContent]\n");
             skip = true;
+            skip_reason = "\"Skip addon\" is on in the install options";
         } else if (config.skip_data_patch && cnmt.key.type == NcmContentMetaType_DataPatch) {
             log_write("\tskipping: [NcmContentMetaType_DataPatch]\n");
             skip = true;
+            skip_reason = "\"Skip data patch\" is on in the install options";
         }
     }
 
@@ -1441,6 +1452,10 @@ Result InstallInternal(ui::ProgressBox* pbox, source::Base* source, const contai
 
         if (skip) {
             log_write("skipping install!\n");
+            if (override.outcome) {
+                override.outcome->skipped++;
+                override.outcome->skip_reason = yati->skip_reason;
+            }
             continue;
         }
 
@@ -1452,6 +1467,9 @@ Result InstallInternal(ui::ProgressBox* pbox, source::Base* source, const contai
         R_TRY(yati->ImportTickets(tickets));
         R_TRY(yati->RemoveInstalledNcas(cnmt));
         R_TRY(yati->RegisterNcasAndPushRecord(cnmt, latest_version_num));
+        if (override.outcome) {
+            override.outcome->installed++;
+        }
     }
 
     log_write("success!\n");
@@ -1542,12 +1560,19 @@ Result InstallInternalStream(ui::ProgressBox* pbox, source::Base* source, contai
 
         if (skip) {
             log_write("skipping install!\n");
+            if (override.outcome) {
+                override.outcome->skipped++;
+                override.outcome->skip_reason = yati->skip_reason;
+            }
             continue;
         }
 
         R_TRY(yati->ImportTickets(tickets));
         R_TRY(yati->RemoveInstalledNcas(cnmt));
         R_TRY(yati->RegisterNcasAndPushRecord(cnmt, latest_version_num));
+        if (override.outcome) {
+            override.outcome->installed++;
+        }
     }
 
     log_write("success!\n");

@@ -24,6 +24,7 @@ Code for the **Ponte** app for the Switch. It is [Sphaira](https://github.com/IT
 - `sphaira/source/ui/progress_box.cpp`: bytes done and total, speed as a moving average, and no "0 seconds remaining" while the speed is still zero.
 - `assets/romfs/themes/ponte_theme.ini` + `sphaira/include/app.hpp`, `sphaira/source/app.cpp`: theme with the brand colors, Ponte's default; anyone who had Sphaira's default theme saved is switched to it.
 - `sphaira/source/yati/yati.cpp`: notifies the screen when something is installed.
+- `sphaira/include/yati/yati.hpp`, `sphaira/source/yati/yati.cpp`: `ConfigOverride::skip_if_already_installed` and `ConfigOverride::outcome` (`yati::Outcome`: how many contents were installed and skipped, and why). yati ends successfully when it skips everything; Ponte turns "skip if already installed" off (the Mac's state decides, from the ns records) and, if nothing was installed, ends the item as `failed` with the reason instead of saying "complete".
 - `sphaira/include/app.hpp`: `App::SetRunInBackground()` (reference counted): while Ponte is installing, `appletSetFocusHandlingMode(NoSuspend)` and the HOME menu does not freeze the app; at the end it goes back to `SuspendHomeSleep`. Application mode only.
 - `sphaira/source/app.cpp` (`App::Loop`): when out of focus it does not draw and sleeps 50 ms per iteration (without vsync the loop would spin nonstop).
 - `sphaira/source/ui/progress_box.cpp` (+ `.hpp`): optional hint line above the buttons; speed computed from the real time between samples (out of focus the box is not drawn).

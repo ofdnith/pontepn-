@@ -24,6 +24,7 @@ Código do app **Ponte** para o Switch. É o [Sphaira](https://github.com/ITotal
 - `sphaira/source/ui/progress_box.cpp`: bytes feitos e total, velocidade em média móvel e sem o "0 segundos restantes" quando a velocidade ainda é zero.
 - `assets/romfs/themes/ponte_theme.ini` + `sphaira/include/app.hpp`, `sphaira/source/app.cpp`: tema com as cores da marca, padrão do Ponte; quem tinha o tema padrão do Sphaira salvo passa para ele.
 - `sphaira/source/yati/yati.cpp`: avisa a tela quando algo é instalado.
+- `sphaira/include/yati/yati.hpp`, `sphaira/source/yati/yati.cpp`: `ConfigOverride::skip_if_already_installed` e `ConfigOverride::outcome` (`yati::Outcome`: quantos conteúdos foram instalados e pulados, e por quê). O yati termina com sucesso quando pula tudo; o Ponte desliga "pular se já instalado" (quem decide é o estado do Mac, pelos registros do ns) e, se nada foi instalado, encerra o item como `failed` com o motivo, em vez de dizer "concluída".
 - `sphaira/include/app.hpp`: `App::SetRunInBackground()` (contagem de referências): enquanto o Ponte instala, `appletSetFocusHandlingMode(NoSuspend)` e o menu HOME não congela o app; no fim volta a `SuspendHomeSleep`. Só no modo aplicativo.
 - `sphaira/source/app.cpp` (`App::Loop`): fora de foco não desenha e dorme 50 ms por volta (sem o vsync o laço giraria sem parar).
 - `sphaira/source/ui/progress_box.cpp` (+ `.hpp`): linha de dica opcional acima dos botões; velocidade calculada pelo tempo real entre amostras (fora de foco a caixa não é desenhada).
