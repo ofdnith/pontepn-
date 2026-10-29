@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ponte</title>
+<link rel="icon" href="/icon.png">
+<style>
+  /* Cores da marca: docs/DESIGN.md (tema escuro). Toda cor da página vem daqui. */
+  :root {
+    --bg: #10141c; --panel: #181e29; --line: #273042; --input: #0d1118; --text: #e8ecf3; --muted: #8e99ad;
+    --accent: #3fb6c4; --accent-ink: #062a2f; --ok: #4cc38a; --warn: #e5b450; --bad: #ef6b6b;
+    /* derivadas (mistura da cor com --panel), para bordas e realces discretos */
+    --panel-hi: #1e2533;     /* linha sob o cursor */
+    --accent-soft: #1f3a44;  /* aba escolhida */
+    --ok-line: #2b5a45;      /* borda de aviso "ok" */
+    --bad-line: #5a2b2b;     /* borda de aviso "erro" */
+    --warn-line: #5a4a2b;
+  }
+  * { box-sizing: border-box; }
+  html { font-size: clamp(16px, 1.1vw, 22px); scroll-padding-bottom: 7rem; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 1rem/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { display: flex; align-items: center; gap: .75rem; padding: .85rem 1rem; border-bottom: 1px solid var(--line);
+           position: sticky; top: 0; background: var(--bg); z-index: 3; }
+  header h1 { font-size: 1.25rem; margin: 0; letter-spacing: .5px; }
+  .chip { font-size: .85rem; padding: .2rem .7rem; border-radius: 99px; background: var(--panel); color: var(--muted);
+          border: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60vw; }
+  .chip.ok { color: var(--ok); border-color: var(--ok-line); }
+  .chip.bad { color: var(--bad); border-color: var(--bad-line); }
+  main { max-width: 1000px; margin: 0 auto; padding: 1rem; }
+  .cols { display: block; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+  h2 { font-size: .95rem; margin: 0 0 .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+  button, select, input { font: inherit; color: var(--text); background: var(--input); border: 1px solid var(--line);
+                          border-radius: 8px; padding: .6rem .9rem; min-height: 48px; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  button.danger { color: var(--bad); }
+  button:disabled { opacity: .45; cursor: default; }
+  button:focus, select:focus, input:focus, label.item:focus-within, summary:focus { outline: 3px solid var(--accent); outline-offset: 1px; }
+  .row { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+  .spread { justify-content: space-between; }
+  .muted { color: var(--muted); font-size: .9rem; }
+  .error { color: var(--bad); font-size: .9rem; margin-top: .5rem; }
+  .error:empty { display: none; }
+  .code { font-size: 1.75rem; letter-spacing: 6px; width: 9em; text-align: center; }
+  .tabs { display: flex; gap: .4rem; flex-wrap: wrap; margin: .25rem 0 .75rem; }
+  .tabs button { font-size: .9rem; }
+  .tabs button.on { background: var(--accent-soft); border-color: var(--accent); }
+  .group { border-top: 1px solid var(--line); padding: .6rem 0; }
+  .group:first-child { border-top: 0; }
+  .gtitle { font-weight: 600; margin-bottom: .4rem; }
+  label.item { display: flex; gap: .75rem; align-items: center; padding: .5rem; border-radius: 8px; cursor: pointer; min-height: 48px; }
+  label.item:hover { background: var(--panel-hi); }
+  label.item.disabled { cursor: default; opacity: .6; }
+  label.item input { width: 1.4rem; height: 1.4rem; min-height: 0; flex: none; }
+  .icon { width: 3rem; height: 3rem; border-radius: 8px; background: var(--input); flex: none; object-fit: cover; }
+  .info { flex: 1; min-width: 0; }
+  .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .badge { font-size: .8rem; padding: .1rem .5rem; border-radius: 99px; border: 1px solid var(--line); white-space: nowrap; }
+  .b-new { color: var(--accent); } .b-installed { color: var(--ok); } .b-update_available { color: var(--warn); }
+  .b-incompatible { color: var(--bad); }
+  .sticky { position: sticky; bottom: 0; background: var(--panel); padding: .75rem 0 .25rem; margin-top: .5rem;
+            border-top: 1px solid var(--line); z-index: 2; }
+  .hidden { display: none !important; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* linha de progresso (docs/DESIGN.md): título + %, barra, status, detalhe */
+  .prog { --c: var(--accent); }
+  .prog.s-queued, .prog.s-paused { --c: var(--warn); }
+  .prog.s-done { --c: var(--ok); }
+  .prog.s-failed { --c: var(--bad); }
+  .prog.s-cancelled { --c: var(--muted); }
+  .ptop { display: flex; gap: .75rem; align-items: baseline; }
+  .ptitle { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pct { color: var(--c); font-variant-numeric: tabular-nums; font-weight: 600; }
+  .bar { height: .5rem; background: var(--line); border-radius: 99px; overflow: hidden; margin: .4rem 0; }
+  .bar > div { height: 100%; background: var(--c); width: 0; transition: width .4s; border-radius: 99px; }
+  .bar.indet > div { width: 100% !important; transition: none;
+    background: repeating-linear-gradient(-45deg, var(--c) 0 .6rem, transparent .6rem 1.2rem);
+    background-size: 1.7rem 100%; animation: run 1s linear infinite; opacity: .8; }
+  @keyframes run { from { background-position: 0 0; } to { background-position: 1.7rem 0; } }
+  @media (prefers-reduced-motion: reduce) { .bar.indet > div { animation: none; } }
+  .pstatus { font-size: .95rem; font-variant-numeric: tabular-nums; }
+  .s-paused .pstatus { color: var(--warn); } .s-failed .pstatus { color: var(--bad); } .s-done .pstatus { color: var(--ok); }
+  .pdetail { font-size: .85rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .job { padding: .75rem 0; border-top: 1px solid var(--line); }
+  .job:first-child { border-top: 0; }
+  .job .actions { margin-top: .5rem; }
+  .stats { font-size: .78rem; color: var(--muted); margin-top: .25rem; word-break: break-word; }
+  .summary { padding: .6rem .75rem; border: 1px solid var(--line); border-radius: 8px; background: var(--input);
+             margin-bottom: .5rem; font-variant-numeric: tabular-nums; }
+  table.diag { width: 100%; border-collapse: collapse; margin-top: .75rem; font-size: .9rem; font-variant-numeric: tabular-nums; }
+  table.diag th, table.diag td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.diag th { color: var(--muted); font-weight: 600; }
+  table.diag td.speed { color: var(--accent); font-weight: 600; white-space: nowrap; }
+  table.diag td.err { color: var(--bad); }
+  .num { width: 7em; }
+
+  /* TV do PS5 (1920×1080) e telas largas: biblioteca à esquerda, cópias à direita */
+  @media (min-width: 1400px) {
+    main { max-width: 1800px; }
+    .cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+    .side { position: sticky; top: 4.5rem; }
+  }
+  @media (max-width: 520px) {
+    main { padding: .6rem; }
+    section { padding: .75rem; }
+    .sticky button.primary { flex: 1; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <img src="/icon.png" alt="" width="28" height="28" style="border-radius:6px"><h1>Ponte</h1>
+  <span id="macChip" class="chip" role="status">procurando o Mac…</span>
+</header>
+<div id="live" class="sr" aria-live="polite"></div>
+<main>
+  <section id="connect" class="hidden">
+    <h2>Mac</h2>
+    <p class="muted">Abra o app Ponte no Mac. Ele aparece aqui sozinho quando está na mesma rede.</p>
+    <div id="found" class="row"></div>
+    <div class="row" style="margin-top:.75rem">
+      <button id="discoverBtn">Procurar de novo</button>
+      <input id="hostInput" placeholder="ou digite o IP do Mac" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" size="16">
+      <button id="connectBtn">Conectar</button>
+    </div>
+    <div id="connectErr" class="error" role="alert"></div>
+  </section>
+
+  <section id="pair" class="hidden">
+    <h2>Parear com <span id="pairName"></span></h2>
+    <p class="muted">Digite o código de 6 dígitos que aparece no app Ponte do Mac.</p>
+    <div class="row">
+      <input id="codeInput" class="code" maxlength="7" inputmode="numeric" autocomplete="off" placeholder="000000">
+      <button id="pairBtn" class="primary">Parear</button>
+      <button id="otherMacBtn">Outro Mac</button>
+    </div>
+    <div id="pairErr" class="error" role="alert"></div>
+  </section>
+
+  <div class="cols">
+    <section id="library" class="hidden">
+      <div class="row spread">
+        <h2 style="margin:0">Biblioteca do Mac</h2>
+        <button id="refreshBtn">Atualizar</button>
+      </div>
+      <div class="tabs" id="tabs" role="group" aria-label="Filtro">
+        <button data-f="all" class="on" aria-pressed="true">Todos</button>
+        <button data-f="new" aria-pressed="false">Novos</button>
+        <button data-f="update_available" aria-pressed="false">Atualizações</button>
+        <button data-f="installed" aria-pressed="false">No console</button>
+      </div>
+      <div id="catalog"><p class="muted">Carregando…</p></div>
+      <div id="catErr" class="error" role="alert"></div>
+      <div class="sticky row">
+        <label class="muted" for="storage">Copiar para</label>
+        <select id="storage"></select>
+        <button id="copyBtn" class="primary" disabled>Copiar</button>
+        <span id="selInfo" class="muted"></span>
+      </div>
+    </section>
+
+    <div class="side">
+      <section id="jobsSec" class="hidden">
+        <div class="row spread">
+          <h2 style="margin:0">Cópias</h2>
+          <button id="clearBtn">Limpar concluídas</button>
+        </div>
+        <div id="summary" class="summary muted" style="margin-top:.75rem"></div>
+        <div id="jobs"></div>
+        <label class="row muted" style="margin-top:.6rem; gap:.5rem; cursor:pointer">
+          <input type="checkbox" id="notifyToggle" style="width:1.3rem;height:1.3rem;min-height:0"> Avisar na tela a cada 25%
+        </label>
+        <details class="muted" style="margin-top:.6rem">
+          <summary>Está lento?</summary>
+          <ul>
+            <li>Cabo de rede no PS5 e no Mac rende muito mais que Wi-Fi. No Wi-Fi, prefira a rede de 5 GHz e deixe o PS5 perto do roteador.</li>
+            <li>O SSD do Mac numa porta USB-C/Thunderbolt (não num hub), e o Mac fora do modo de repouso.</li>
+            <li>Copiar para o mesmo disco de onde está rodando um jogo divide a velocidade; com um jogo aberto, prefira o USB ou o M.2.</li>
+            <li>Pendrives e HDs USB lentos limitam a gravação; o SSD interno e o M.2 são os mais rápidos.</li>
+            <li>Pausar e continuar não perde nada: a cópia retoma de onde parou.</li>
+          </ul>
+        </details>
+      </section>
+
+      <section id="diagSec" class="hidden">
+        <h2>Diagnóstico de velocidade</h2>
+        <p class="muted">Mede a rede (baixa do Mac e descarta) e o disco (grava no armazenamento escolhido em "Copiar para") separados. Cada teste leva até 15 s; pause as cópias antes para não misturar.</p>
+        <div class="row">
+          <button id="diagNetBtn">Testar rede</button>
+          <button id="diagDiskBtn">Testar disco</button>
+        </div>
+        <div id="diagProg" class="prog hidden" style="margin-top:.75rem">
+          <div class="ptop"><div class="ptitle" id="diagTitle"></div><div class="pct" id="diagPct"></div></div>
+          <div class="bar indet" id="diagBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Teste em andamento"><div></div></div>
+          <div class="pstatus" id="diagStatus"></div>
+        </div>
+        <div id="diagMsg" class="muted" style="margin-top:.5rem"></div>
+        <table id="diagTable" class="diag hidden">
+          <thead><tr><th>Teste</th><th>Velocidade</th><th>Dados</th><th>Detalhe</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="row" style="margin-top:.75rem">
+          <label class="muted" for="rcvbufInput">Buffer TCP (KB, 0 = sistema)</label>
+          <input id="rcvbufInput" class="num" inputmode="numeric">
+          <label class="muted" for="chunkInput">Bloco da cópia (KB)</label>
+          <input id="chunkInput" class="num" inputmode="numeric">
+          <button id="saveTuneBtn">Salvar</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+<script>
+"use strict";
+var state = { status: null, catalog: null, filter: "all", selected: {}, lastDone: 0, loadingCatalog: false,
+              copying: false, jobNodes: {}, jobStates: {}, storageKey: "", pollTimer: null, diagRunning: false };
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+  return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+/* ---------- textos (docs/DESIGN.md): base 10, vírgula decimal ---------- */
+function num(n) { return (n < 10 && n % 1 !== 0 ? n.toFixed(1) : n.toFixed(0)).replace(".", ","); }
+function size(n) {
+  if (n == null || !isFinite(n)) return "";
+  if (n < 1000) return Math.round(n) + " B";
+  var u = ["kB", "MB", "GB", "TB"], i = -1;
+  do { n /= 1000; i++; } while (n >= 1000 && i < u.length - 1);
+  return num(Math.round(n * 10) / 10) + " " + u[i];
+}
+function speedText(bps) { return bps > 0 ? size(bps) + "/s" : "0 MB/s"; }
+function durText(s) {
+  s = Math.max(0, Math.round(s));
+  if (s < 60) return s + " s";
+  var m = Math.round(s / 60);
+  if (m < 60) return m + " min";
+  var h = Math.floor(m / 60); m = m % 60;
+  return h + " h" + (m ? " " + m + " min" : "");
+}
+function etaText(s) {
+  if (s == null || !isFinite(s)) return "";
+  return s < 60 ? "falta menos de 1 min" : "faltam " + durText(s);
+}
+/* corta no meio: "Jogo/pasta/…/arquivo.bin" */
+function midCut(s, max) {
+  s = String(s || ""); max = max || 64;
+  if (s.length <= max) return s;
+  var k = Math.floor((max - 1) / 2);
+  return s.slice(0, k) + "…" + s.slice(s.length - (max - 1 - k));
+}
+
+var PHASE_LABEL = { query: "consultando o Mac", verify_partial: "conferindo o que já tinha", download: "copiando",
+                    verify: "conferindo", move: "movendo para homebrew/", install: "entregando ao instalador" };
+var STATE_TEXT = { queued: "na fila", running: "copiando", paused: "pausado", done: "concluído", failed: "falhou",
+                   cancelled: "cancelado" };
+/* o que aconteceu e o que fazer */
+var ERROR_TEXT = {
+  network: "O Mac não respondeu. Confira se o app Ponte está aberto e na mesma rede; a cópia continua sozinha quando ele voltar.",
+  no_space: "Falta espaço no destino. Libere espaço ou escolha outro armazenamento em \"Copiar para\" e tente de novo.",
+  hash_mismatch: "O arquivo chegou diferente do que está no Mac, mesmo baixando de novo. Confira a rede e o disco de destino e tente de novo.",
+  destination_exists: "Já existe um item com esse nome em homebrew/. Toque em Substituir para trocar pelo do Mac.",
+  size_mismatch: "O arquivo chegou com tamanho diferente do esperado. Tente de novo; a cópia continua de onde parou.",
+  io: "Erro ao gravar no console. Confira se o armazenamento está montado e com espaço, e tente de novo.",
+  http: "O Mac recusou o pedido. Atualize a biblioteca e tente de novo.",
+  install_refused: "O instalador do PS5 recusou o pacote. Confira se o .pkg funciona neste firmware.",
+  revision_changed: "O item mudou no Mac durante a cópia. Atualize a biblioteca e copie de novo.",
+  unsafe_path: "O Mac mandou um caminho de arquivo inválido e a cópia foi recusada por segurança. Confira o item no Mac.",
+  bad_item: "O Mac mandou dados incompletos deste item. Atualize a biblioteca e tente de novo.",
+  item_not_ready: "O Mac ainda está preparando este item; a cópia começa sozinha quando ele ficar pronto.",
+  no_storage: "O armazenamento de destino não está montado. Conecte o disco; a cópia continua sozinha.",
+  unreachable: "O Mac não respondeu. Confira se o app Ponte está aberto e na mesma rede.",
+  unauthorized: "O Mac não reconhece mais este PS5. Pareie de novo com o código do app.",
+  payload: "O PS5 não respondeu. Confira se o payload Ponte ainda está rodando e se o console está na rede."
+};
+function friendly(code, fallback) { return ERROR_TEXT[code] || fallback || "Algo deu errado. Tente de novo."; }
+
+function api(method, path, body) {
+  return fetch(path, { method: method, headers: body ? { "Content-Type": "application/json" } : {},
+                       body: body ? JSON.stringify(body) : undefined })
+    .catch(function () { var e = new Error(friendly("payload")); e.code = "payload"; throw e; })
+    .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) {
+      if (!r.ok) {
+        var code = j && j.error ? j.error.code : "http";
+        var e = new Error(j && j.error ? (ERROR_TEXT[code] ? friendly(code) + " (" + j.error.message + ")" : j.error.message) : ("erro " + r.status));
+        e.code = code; throw e;
+      }
+      return j; }); });
+}
+function announce(text) { var l = $("live"); l.textContent = ""; setTimeout(function () { l.textContent = text; }, 50); }
+
+var STATE_LABEL = { new: "novo", installed: "no console", update_available: "atualização disponível",
+                    incompatible: "incompatível" };
+var CONTENT_LABEL = { base: "jogo", update: "atualização", dlc: "DLC", unknown: "" };
+var KIND_LABEL = { folder: "pasta", exfat: ".exfat", ffpkg: ".ffpkg", ffpfs: ".ffpfs", ffpfsc: ".ffpfsc",
+                   pkg_ps4: ".pkg PS4", pkg_ps5: ".pkg PS5", folder_ps4: "pasta PS4" };
+
+function renderStatus() {
+  var s = state.status; if (!s) return;
+  var mac = s.mac, chip = $("macChip");
+  if (!mac) { chip.textContent = "procurando o Mac…"; chip.className = "chip"; }
+  else if (!mac.reachable) { chip.textContent = (mac.name || mac.host) + " · fora do ar"; chip.className = "chip bad"; }
+  else { chip.textContent = (mac.name || mac.host) + " · conectado"; chip.className = "chip ok"; }
+  var ready = mac && mac.reachable && mac.paired;
+  $("connect").classList.toggle("hidden", !!(mac && (mac.reachable || mac.paired)));
+  $("pair").classList.toggle("hidden", !(mac && mac.reachable && !mac.paired));
+  if (mac) $("pairName").textContent = mac.name || mac.host;
+  $("library").classList.toggle("hidden", !ready);
+  $("diagSec").classList.toggle("hidden", !ready);
+  renderStorages(s.storages || []);
+  renderJobs(s.jobs || []);
+  if (s.settings && document.activeElement !== $("notifyToggle")) $("notifyToggle").checked = !!s.settings.notify_progress;
+  if (s.settings && !state.tuneLoaded) {
+    $("rcvbufInput").value = s.settings.rcvbuf_kb; $("chunkInput").value = s.settings.chunk_kb; state.tuneLoaded = true; }
+  if (ready && !state.catalog && !state.loadingCatalog) loadCatalog();
+}
+
+/* Só refaz a lista quando os armazenamentos mudam, e nunca com ela em foco (o controle perderia a escolha). */
+function renderStorages(list) {
+  var sel = $("storage");
+  if (document.activeElement === sel) return;
+  var key = list.map(function (st) { return st.id; }).join("|");
+  if (key !== state.storageKey) {
+    var cur = sel.value;
+    while (sel.firstChild) sel.removeChild(sel.firstChild);
+    list.forEach(function (st) { var o = el("option"); o.value = st.id; sel.appendChild(o); });
+    if (cur) sel.value = cur;
+    state.storageKey = key;
+  }
+  list.forEach(function (st, i) {
+    var t = st.label + " · " + size(st.free) + " livres";
+    if (sel.options[i] && sel.options[i].textContent !== t) sel.options[i].textContent = t;
+  });
+}
+
+/* ---------- cópias: nós guardados por seq; a cada consulta só muda texto e largura ---------- */
+function makeJobNode(j) {
+  var n = { root: el("div", "job prog") };
+  n.root.setAttribute("data-seq", j.seq);
+  var top = el("div", "ptop");
+  n.title = el("div", "ptitle"); n.pct = el("div", "pct");
+  top.appendChild(n.title); top.appendChild(n.pct);
+  n.bar = el("div", "bar"); n.fill = el("div"); n.bar.appendChild(n.fill);
+  n.bar.setAttribute("role", "progressbar"); n.bar.setAttribute("aria-valuemin", "0"); n.bar.setAttribute("aria-valuemax", "100");
+  n.status = el("div", "pstatus"); n.detail = el("div", "pdetail"); n.stats = el("div", "stats hidden");
+  n.actions = el("div", "row actions");
+  function btn(label, act, cls) { var b = el("button", cls || "", label); b.setAttribute("data-act", act); b.setAttribute("data-seq", j.seq); n.actions.appendChild(b); return b; }
+  n.pause = btn("Pausar", "pause"); n.resume = btn("Continuar", "resume"); n.replace = btn("Substituir", "replace");
+  n.retry = btn("Tentar de novo", "retry"); n.cancel = btn("Cancelar", "cancel", "danger");
+  n.root.appendChild(top); n.root.appendChild(n.bar); n.root.appendChild(n.status); n.root.appendChild(n.detail);
+  n.root.appendChild(n.stats); n.root.appendChild(n.actions);
+  return n;
+}
+function setText(e, t) { if (e.textContent !== t) e.textContent = t; }
+function show(e, on) { var h = !on; if (e.classList.contains("hidden") !== h) e.classList.toggle("hidden", h); }
+
+function updateJobNode(n, j) {
+  n.job = j;
+  var st = j.state, running = st === "running";
+  var cls = "job prog s-" + st;
+  if (n.root.className !== cls) n.root.className = cls;
+  n.bar.setAttribute("aria-label", j.title);
+  setText(n.title, j.title);
+  /* barra: etapa com tamanho próprio (conferência) mostra a etapa; sem tamanho, faixa que corre */
+  var indet = false, frac = null, statusParts = [], speed = j.speed, eta = j.eta_s;
+  var phaseOwn = running && (j.phase === "verify_partial" || j.phase === "verify") && j.phase_total > 0;
+  if (st === "done") frac = 1;
+  else if (st === "failed") frac = 1;
+  else if (phaseOwn) {
+    frac = j.phase_done / j.phase_total; speed = j.phase_speed;
+    eta = speed > 0 ? (j.phase_total - j.phase_done) / speed : null;
+  } else if (running && (j.phase === "move" || j.phase === "install" || (j.phase === "query" && !j.done))) indet = true;
+  else if (j.total > 0) frac = Math.min(1, j.done / j.total);
+  else indet = running;
+  if (indet) {
+    if (!n.bar.classList.contains("indet")) n.bar.classList.add("indet");
+    n.bar.removeAttribute("aria-valuenow"); setText(n.pct, "");
+  } else {
+    if (n.bar.classList.contains("indet")) n.bar.classList.remove("indet");
+    var pct = Math.floor(100 * (frac || 0));
+    var w = (100 * (frac || 0)).toFixed(1) + "%";
+    if (n.fill.style.width !== w) n.fill.style.width = w;
+    n.bar.setAttribute("aria-valuenow", String(pct));
+    setText(n.pct, st === "failed" ? "" : pct + "%");
+  }
+  /* status: <feito> de <total> · <velocidade> · faltam <tempo>; fora do andamento, o estado em texto */
+  if (running) {
+    if (phaseOwn) statusParts.push(size(j.phase_done) + " de " + size(j.phase_total));
+    else if (j.total > 0 && !indet) statusParts.push(size(j.done) + " de " + size(j.total));
+    if (!indet && (j.phase === "download" || phaseOwn)) statusParts.push(speedText(speed));
+    if (!indet && eta != null) statusParts.push(etaText(eta));
+    if (!statusParts.length) statusParts.push(PHASE_LABEL[j.phase] || "copiando");
+  } else if (st === "paused") {
+    statusParts.push(j.manual_pause ? "pausado por você; toque em Continuar" : (j.message || "pausado"));
+    if (j.total > 0) statusParts.push(size(j.done) + " de " + size(j.total));
+  } else if (st === "queued") {
+    statusParts.push("na fila");
+    if (j.total > 0) statusParts.push(size(j.total));
+  } else if (st === "done") {
+    statusParts.push("concluído");
+    if (j.total > 0) statusParts.push(size(j.total));
+  } else if (st === "failed") {
+    statusParts.push("falhou: " + friendly(j.error, j.message));
+  } else if (st === "cancelled") {
+    statusParts.push("cancelado; o que já veio fica guardado");
+    if (j.total > 0) statusParts.push(size(j.done) + " de " + size(j.total));
+  }
+  setText(n.status, statusParts.join(" · "));
+  /* detalhe: etapa e arquivo atual, ou a mensagem do payload */
+  var detail = "";
+  if (running) {
+    detail = PHASE_LABEL[j.phase] || "copiando";
+    if (j.file && j.file_count) detail += " · arquivo " + j.file_index + " de " + j.file_count + ": " + midCut(j.file, 60);
+  } else if (st === "done" || st === "failed") detail = j.message || "";
+  setText(n.detail, detail);
+  n.detail.title = running && j.file ? j.file : detail;
+  show(n.detail, !!detail);
+  setText(n.stats, j.stats || ""); show(n.stats, !!j.stats && (running || st === "done"));
+  var active = st === "queued" || running;
+  show(n.pause, active); show(n.resume, st === "paused");
+  show(n.cancel, active || st === "paused");
+  show(n.replace, st === "failed" && j.error === "destination_exists");
+  show(n.retry, (st === "failed" && j.error !== "destination_exists") || st === "cancelled");
+  show(n.actions, active || st === "paused" || st === "failed" || st === "cancelled");
+}
+
+function renderJobs(jobs) {
+  $("jobsSec").classList.toggle("hidden", jobs.length === 0);
+  var doneCount = jobs.filter(function (j) { return j.state === "done"; }).length;
+  if (doneCount > state.lastDone && state.catalog) loadCatalog();
+  state.lastDone = doneCount;
+  var box = $("jobs"), seen = {};
+  jobs.forEach(function (j) {
+    seen[j.seq] = true;
+    var n = state.jobNodes[j.seq];
+    if (!n) {
+      n = state.jobNodes[j.seq] = makeJobNode(j);
+      /* o mais novo em cima: entra antes do primeiro mais antigo. Os que já existem não saem do
+       * lugar, então o foco do controle continua no mesmo botão. */
+      var before = null;
+      for (var c = box.firstChild; c; c = c.nextSibling) if (+c.getAttribute("data-seq") < j.seq) { before = c; break; }
+      box.insertBefore(n.root, before);
+    }
+    updateJobNode(n, j);
+    var prev = state.jobStates[j.seq];
+    if (prev && prev !== j.state) announce(j.title + ": " + (STATE_TEXT[j.state] || j.state));
+    state.jobStates[j.seq] = j.state;
+  });
+  Object.keys(state.jobNodes).forEach(function (k) {
+    if (!seen[k]) { var r = state.jobNodes[k].root; if (r.parentNode) r.parentNode.removeChild(r); delete state.jobNodes[k]; delete state.jobStates[k]; }
+  });
+  /* resumo da fila: itens, quanto falta, velocidade somada, tempo */
+  var pending = jobs.filter(function (j) { return j.state === "queued" || j.state === "running" || j.state === "paused"; });
+  var left = 0, speed = 0, paused = 0;
+  pending.forEach(function (j) {
+    if (j.total > 0) left += Math.max(0, j.total - j.done);
+    if (j.state === "running") speed += j.speed || 0;
+    if (j.state === "paused") paused++;
+  });
+  var parts = [];
+  if (!pending.length) parts.push("nada copiando agora");
+  else {
+    parts.push(pending.length + (pending.length > 1 ? " itens na fila" : " item na fila"));
+    if (left > 0) parts.push("faltam " + size(left));
+    parts.push(speedText(speed));
+    if (speed > 0 && left > 0) parts.push(etaText(left / speed));
+    if (paused) parts.push(paused + (paused > 1 ? " pausados" : " pausado"));
+  }
+  setText($("summary"), parts.join(" · "));
+}
+
+function groupKey(it) { return it.parent_title_id || it.title_id || it.id; }
+function renderCatalog() {
+  var c = state.catalog; if (!c) return;
+  var items = c.items.filter(function (it) { return state.filter === "all" || it.state === state.filter; });
+  var groups = {}, order = [];
+  c.items.forEach(function (it) { var k = groupKey(it); if (!groups[k]) { groups[k] = { title: null, items: [] }; order.push(k); }
+    if (it.content === "base" || !groups[k].title) groups[k].title = it.title; });
+  items.forEach(function (it) { groups[groupKey(it)].items.push(it); });
+  var rank = { base: 0, update: 1, dlc: 2, unknown: 3 };
+  var html = order.filter(function (k) { return groups[k].items.length; }).map(function (k) {
+    var g = groups[k];
+    g.items.sort(function (a, b) { return rank[a.content] - rank[b.content] || a.title.localeCompare(b.title); });
+    return '<div class="group"><div class="gtitle">' + esc(g.title) + "</div>" + g.items.map(function (it) {
+      var dis = it.state === "incompatible";
+      var meta = [CONTENT_LABEL[it.content], KIND_LABEL[it.kind] || it.kind, it.version ? "v" + it.version : "", size(it.size)]
+        .filter(Boolean).join(" · ");
+      var reason = it.state_reason ? " · " + it.state_reason : "";
+      var warn = (it.warnings || []).indexOf("experimental_format") >= 0 ? " · experimental" : "";
+      return '<label class="item' + (dis ? " disabled" : "") + '"><input type="checkbox" data-id="' + esc(it.id) + '"' +
+        (dis ? " disabled" : "") + (state.selected[it.id] ? " checked" : "") + ">" +
+        (it.icon ? '<img class="icon" loading="lazy" src="/api/icon?id=' + encodeURIComponent(it.id) + '" alt="" onerror="this.removeAttribute(\'src\');this.onerror=null">' : '<div class="icon"></div>') +
+        '<div class="info"><div class="name">' + esc(it.title) + '</div><div class="muted">' + esc(meta + reason + warn) + "</div></div>" +
+        '<span class="badge b-' + esc(it.state) + '">' + esc(STATE_LABEL[it.state] || it.state) + "</span></label>";
+    }).join("") + "</div>";
+  }).join("");
+  $("catalog").innerHTML = html || '<p class="muted">Nada aqui.</p>';
+  updateSelection();
+}
+
+function updateSelection() {
+  var ids = Object.keys(state.selected).filter(function (k) { return state.selected[k]; });
+  var total = 0, pkgOnly = ids.length > 0;
+  (state.catalog ? state.catalog.items : []).forEach(function (it) {
+    if (state.selected[it.id]) { total += it.size; if (it.kind.indexOf("pkg_") !== 0) pkgOnly = false; } });
+  $("copyBtn").disabled = ids.length === 0 || state.copying;
+  $("copyBtn").textContent = state.copying ? "Enviando…" : (ids.length ? "Copiar " + ids.length + (ids.length > 1 ? " itens" : " item") : "Copiar");
+  $("selInfo").textContent = ids.length ? size(total) + (pkgOnly ? " · pacotes vão para o instalador do sistema" : "") : "";
+}
+
+function loadCatalog() {
+  state.loadingCatalog = true;
+  return api("GET", "/api/catalog").then(function (c) { state.catalog = c; $("catErr").textContent = ""; renderCatalog(); })
+    .catch(function (e) { $("catErr").textContent = e.message; })
+    .then(function () { state.loadingCatalog = false; });
+}
+
+/* ---------- consulta periódica (parada com a página escondida) ---------- */
+function poll() {
+  clearTimeout(state.pollTimer); state.pollTimer = null;
+  if (document.hidden) return;
+  api("GET", "/api/status").then(function (s) { state.status = s; renderStatus(); })
+    .catch(function () { $("macChip").textContent = "sem resposta do payload"; $("macChip").className = "chip bad"; })
+    .then(function () { if (!document.hidden) state.pollTimer = setTimeout(poll, 1000); });
+}
+document.addEventListener("visibilitychange", function () { if (!document.hidden) poll(); });
+function poll1() { return api("GET", "/api/status").then(function (s) { state.status = s; renderStatus(); }); }
+
+function discover() {
+  $("found").innerHTML = '<span class="muted">procurando…</span>';
+  api("POST", "/api/discover").then(function (list) {
+    $("found").innerHTML = list.length ? list.map(function (m) {
+      return '<button class="primary" data-host="' + esc(m.host) + '" data-port="' + m.port + '">' + esc(m.name || m.host) + " (" + esc(m.host) + ")</button>";
+    }).join("") : '<span class="muted">Nenhum Mac respondeu. Confira se o app está aberto e na mesma rede.</span>';
+  }).catch(function (e) { $("found").innerHTML = ""; $("connectErr").textContent = e.message; });
+}
+
+function connect(host, port) {
+  $("connectErr").textContent = "";
+  if (!host) { $("connectErr").textContent = "Digite o IP do Mac (aparece no app Ponte, em Ajustes)."; return; }
+  api("POST", "/api/connect", { host: host, port: port || 47101 }).then(poll1).catch(function (e) { $("connectErr").textContent = e.message; });
+}
+
+function copy(ids, storage, replace) {
+  state.copying = true; updateSelection();
+  return api("POST", "/api/copy", { ids: ids, storage: storage, replace: !!replace }).then(function (r) {
+    $("catErr").textContent = r.errors && r.errors.length ? r.errors.join("; ") : "";
+    poll1();
+    return r;
+  }).catch(function (e) { $("catErr").textContent = e.message; return null; })
+    .then(function (r) { state.copying = false; updateSelection(); return r; });
+}
+
+/* ---------- diagnóstico ---------- */
+function mbText(v) { return num(v || 0) + " MB/s"; }
+function biggestItem() {
+  var best = null;
+  ((state.catalog && state.catalog.items) || []).forEach(function (it) {
+    if (it.kind.indexOf("pkg_") !== 0 && (!best || it.size > best.size)) best = it; });
+  if (!best) ((state.catalog && state.catalog.items) || []).forEach(function (it) { if (!best || it.size > best.size) best = it; });
+  return best;
+}
+function diagRow(label, speed, data, detail, isErr) {
+  var t = $("diagTable"); t.classList.remove("hidden");
+  var tr = el("tr");
+  tr.appendChild(el("td", "", label));
+  tr.appendChild(el("td", isErr ? "err" : "speed", speed));
+  tr.appendChild(el("td", "", data));
+  tr.appendChild(el("td", isErr ? "err" : "muted", detail));
+  t.tBodies[0].appendChild(tr);
+}
+function diagProgressLoop() {
+  if (!state.diagRunning) return;
+  api("GET", "/api/diag/progress").then(function (p) {
+    if (!state.diagRunning) return;
+    var bar = $("diagBar");
+    if (p.running) {
+      setText($("diagTitle"), p.label);
+      var parts = [];
+      if (p.total > 0) {
+        var f = Math.min(1, p.done / p.total);
+        bar.classList.remove("indet"); bar.firstChild.style.width = (100 * f).toFixed(1) + "%";
+        bar.setAttribute("aria-valuenow", String(Math.floor(100 * f)));
+        setText($("diagPct"), Math.floor(100 * f) + "%");
+        parts.push(size(p.done) + " de " + size(p.total));
+      }
+      parts.push(speedText(p.speed));
+      parts.push(durText(p.elapsed_s) + " de no máximo 15 s");
+      setText($("diagStatus"), parts.join(" · "));
+    }
+  }).catch(function () {}).then(function () { if (state.diagRunning) setTimeout(diagProgressLoop, 500); });
+}
+function runDiag(steps) {
+  $("diagNetBtn").disabled = $("diagDiskBtn").disabled = true;
+  $("diagTable").tBodies[0].innerHTML = ""; $("diagTable").classList.add("hidden");
+  state.diagRunning = true;
+  $("diagProg").className = "prog s-running"; diagProgressLoop();
+  var p = Promise.resolve(), t0 = Date.now();
+  steps.forEach(function (st) {
+    p = p.then(function () {
+      var bar = $("diagBar"); bar.classList.add("indet"); bar.removeAttribute("aria-valuenow");
+      setText($("diagTitle"), st.label); setText($("diagPct"), ""); setText($("diagStatus"), "começando…");
+      return api("GET", st.url).then(function (r) { st.row(r); })
+        .catch(function (e) { diagRow(st.label, "erro", "", e.message, true); });
+    });
+  });
+  return p.then(function () {
+    state.diagRunning = false;
+    $("diagProg").className = "prog hidden";
+    setText($("diagMsg"), "Testes concluídos em " + durText((Date.now() - t0) / 1000) + ".");
+    announce("Diagnóstico concluído");
+    $("diagNetBtn").disabled = $("diagDiskBtn").disabled = false;
+  });
+}
+function netStep(label, it, extra) {
+  return { label: label, url: "/api/diag/net?mb=2048&max_s=15&item=" + encodeURIComponent(it.id) + extra,
+    row: function (r) { diagRow(label, mbText(r.mb_s), size(r.bytes) + " em " + durText(r.seconds),
+      "leitura média " + size(r.avg_recv_kb * 1024) + " · maior espera " + Math.round(r.max_wait_ms) + " ms · buffer TCP " +
+      (r.rcvbuf_kb >= 0 ? size(r.rcvbuf_kb * 1024) : "?") + (r.error ? " · " + r.error : ""), !!r.error); } };
+}
+function diskStep(storage, kb) {
+  var label = "Disco, blocos de " + size(kb * 1024);
+  return { label: label, url: "/api/diag/disk?mb=1024&max_s=15&storage=" + encodeURIComponent(storage) + "&block_kb=" + kb,
+    row: function (r) { diagRow(label, mbText(r.mb_s), size(r.bytes) + " em " + durText(r.seconds),
+      "escrita média " + num(r.avg_write_ms) + " ms, mais lenta " + Math.round(r.max_write_ms) + " ms · fsync " +
+      Math.round(r.fsync_ms) + " ms" + (r.error ? " · " + r.error : ""), !!r.error); } };
+}
+
+function jobBySeq(seq) { var n = state.jobNodes[seq]; return n ? n.job : null; }
+
+document.addEventListener("click", function (ev) {
+  var t = ev.target.closest ? ev.target.closest("button") : null; if (!t) return;
+  var act = t.getAttribute("data-act");
+  if (act) {
+    var j = jobBySeq(+t.getAttribute("data-seq")); if (!j) return;
+    if (act === "cancel") {
+      if (!confirm("Cancelar a cópia de \"" + j.title + "\"? O que já veio fica guardado; copiar de novo continua de onde parou.")) return;
+      api("POST", "/api/cancel", { seq: j.seq }).then(poll1).catch(function (e) { $("catErr").textContent = e.message; });
+    } else if (act === "pause") api("POST", "/api/pause", { seq: j.seq }).then(poll1);
+    else if (act === "resume") api("POST", "/api/resume", { seq: j.seq }).then(poll1);
+    else if (act === "replace") {
+      if (!confirm("Substituir o que já está em homebrew/ por \"" + j.title + "\" do Mac? O que está lá agora será apagado.")) return;
+      copy([j.item_id], j.storage, true);
+    } else if (act === "retry") copy([j.item_id], j.storage, false);
+    return;
+  }
+  if (t.id === "discoverBtn") discover();
+  else if (t.id === "connectBtn") connect($("hostInput").value.trim());
+  else if (t.getAttribute("data-host")) connect(t.getAttribute("data-host"), +t.getAttribute("data-port"));
+  else if (t.id === "pairBtn") {
+    $("pairErr").textContent = "";
+    api("POST", "/api/pair", { code: $("codeInput").value }).then(function () { $("codeInput").value = ""; state.catalog = null; poll1(); })
+      .catch(function (e) { $("pairErr").textContent = e.message; });
+  } else if (t.id === "otherMacBtn") {
+    if (!confirm("Esquecer este Mac? O pareamento é apagado e você vai precisar do código de novo para voltar a ele.")) return;
+    api("POST", "/api/forget").then(function () { state.catalog = null; discover(); poll1(); });
+  }
+  else if (t.id === "refreshBtn") loadCatalog();
+  else if (t.id === "clearBtn") api("POST", "/api/clear").then(poll1);
+  else if (t.id === "diagNetBtn") {
+    var it = biggestItem();
+    if (!it) { setText($("diagMsg"), "Carregue a biblioteca do Mac primeiro."); return; }
+    setText($("diagMsg"), "Rede: baixando " + it.title + " (" + size(it.size) + ") e descartando.");
+    runDiag([netStep("Buffer TCP dos ajustes, leituras de 4 MB", it, ""),
+             netStep("Buffer TCP padrão do sistema", it, "&rcvbuf_kb=0"),
+             netStep("Leituras de 64 kB", it, "&read_kb=64")]);
+  } else if (t.id === "diagDiskBtn") {
+    var stg = $("storage").value || "internal";
+    setText($("diagMsg"), "Disco: gravando em " + ($("storage").selectedOptions && $("storage").selectedOptions[0] ? $("storage").selectedOptions[0].textContent : stg) + ".");
+    runDiag([diskStep(stg, 16), diskStep(stg, 256), diskStep(stg, 4096)]);
+  } else if (t.id === "saveTuneBtn") {
+    api("POST", "/api/settings", { rcvbuf_kb: +$("rcvbufInput").value, chunk_kb: +$("chunkInput").value })
+      .then(function (s) { $("rcvbufInput").value = s.rcvbuf_kb; $("chunkInput").value = s.chunk_kb;
+        setText($("diagMsg"), "Ajustes salvos: buffer TCP " + s.rcvbuf_kb + " KB, bloco " + s.chunk_kb + " KB (valem na próxima cópia)."); })
+      .catch(function (e) { setText($("diagMsg"), e.message); });
+  }
+  else if (t.id === "copyBtn") {
+    if (state.copying) return;
+    var ids = Object.keys(state.selected).filter(function (k) { return state.selected[k]; });
+    copy(ids, $("storage").value).then(function (r) { if (r) { state.selected = {}; renderCatalog(); } });
+  } else if (t.getAttribute("data-f")) {
+    state.filter = t.getAttribute("data-f");
+    Array.prototype.forEach.call($("tabs").children, function (b) { b.classList.toggle("on", b === t); b.setAttribute("aria-pressed", b === t ? "true" : "false"); });
+    renderCatalog();
+  }
+});
+document.addEventListener("change", function (ev) {
+  if (ev.target.id === "notifyToggle") { api("POST", "/api/settings", { notify_progress: ev.target.checked }); return; }
+  var id = ev.target.getAttribute && ev.target.getAttribute("data-id");
+  if (id) { state.selected[id] = ev.target.checked; updateSelection(); }
+});
+$("codeInput").addEventListener("keydown", function (ev) { if (ev.key === "Enter") $("pairBtn").click(); });
+$("hostInput").addEventListener("keydown", function (ev) { if (ev.key === "Enter") $("connectBtn").click(); });
+discover();
+poll();
+</script>
+</body>
+</html>

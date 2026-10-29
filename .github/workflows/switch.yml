@@ -1,0 +1,86 @@
+# App do Switch: testes do cliente no PC e o ponte.nro. Gera o artefato Ponte-Switch.
+name: Switch
+
+on:
+  workflow_dispatch:
+  # chamado pelo release.yml ao enviar uma tag de versão
+  workflow_call:
+  push:
+    branches: ["**"]
+    paths:
+      - "switch/**"
+      - "protocol/**"
+      - "reference/**"
+      - ".github/workflows/switch.yml"
+  pull_request:
+    paths:
+      - "switch/**"
+
+jobs:
+  hosttest:
+    name: Cliente no PC (contra a referência)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - run: make -C switch/hosttest test
+
+  nro:
+    name: ponte.nro (${{ matrix.artifact }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # Ponte-Switch = motor enxuto do Sphaira (sem FTP/MTP/HDD USB/música)
+        include:
+          - preset: Ponte
+            artifact: Ponte-Switch
+    runs-on: ubuntu-latest
+    container: devkitpro/devkita64:latest
+    defaults:
+      run:
+        working-directory: switch/app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Atualiza pacotes
+        run: |
+          sudo -n apt-get update
+          sudo -n apt-get upgrade -y texinfo
+
+      - name: Libera o git no container
+        run: git config --system --add safe.directory '*'
+
+      # mesmos passos do CI do Sphaira: libnx do master e o newlib com iosupport
+      - name: Baixa libnx e newlib
+        run: |
+          git clone --recurse-submodules https://github.com/switchbrew/libnx.git /tmp/libnx
+          git clone https://github.com/R-YaTian/newlib.git -b iosupport /tmp/newlib
+
+      - uses: lukka/get-cmake@v4.4.2
+
+      - name: Permissões
+        run: chmod 777 -R "$GITHUB_WORKSPACE" /tmp/libnx /tmp/newlib
+
+      - name: libgloss
+        working-directory: /tmp/newlib
+        run: ./build-libgloss-local.sh
+
+      - name: libnx
+        working-directory: /tmp/libnx
+        run: make install -j$(nproc)
+
+      - name: Configura
+        run: cmake --preset ${{ matrix.preset }}
+
+      - name: Compila
+        run: cmake --build --preset ${{ matrix.preset }} --parallel $(nproc)
+
+      - name: Publicar ${{ matrix.artifact }}
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: switch/app/build/${{ matrix.preset }}/ponte.nro

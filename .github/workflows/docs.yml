@@ -1,0 +1,22 @@
+# Documentação: pares inglês/português, seletor de idioma, links e âncoras (tools/check_docs.py).
+name: Documentação
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["**"]
+    paths:
+      - "**.md"
+      - "tools/check_docs.py"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "**.md"
+
+jobs:
+  docs:
+    name: Conferir a documentação
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/check_docs.py
