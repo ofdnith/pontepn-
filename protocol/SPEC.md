@@ -410,11 +410,13 @@ Outros detalhes do cliente:
 - [ ] Metadados completos de XCI/XCZ e nome dos jogos de Switch (exigem `prod.keys`).
 - [ ] Carregador para `folder_ps4`.
 - [ ] Registrar jogos direto pelo payload, sem depender do montador externo.
+- [ ] DLC de jogos de PS5 em pasta ou imagem: hoje pasta e imagem são sempre `base` (§1.1) e `.pkg` de PS5 está bloqueado no 13.60. Falta saber como o montador trata DLC solta antes de definir `kind`, identificação e destino. (DLC de PS4 em `.pkg` e DLC do Switch já funcionam.)
 - [x] Progresso da cópia visível no Mac em tempo real — resolvido só do lado do Mac, sem mudar o protocolo (§7.6).
 
 ## 10. Histórico
 
 **rascunho 4** (o protocolo continua `1`: só acréscimos compatíveis)
+- §9: DLC de jogos de PS5 em pasta ou imagem entra como item em aberto. Sem mudança no protocolo.
 - Conversão para `.exfat` (§7.4), conferência por `sha256` (§7.5) e extração de compactados (§1.3) passam a ser opcionais e desligadas por padrão no app do Mac; sem hash, o cliente confere só o tamanho.
 - §8.1: regras do cliente do Switch, o app Ponte (instalação direto da rede, sem área temporária; conteúdo de `console/state` no Switch).
 - Rota de arquivo aceita `?token=` e um nome no fim, para o instalador do PS5 baixar `.pkg` direto do Mac (§5.5, §8 item 7).

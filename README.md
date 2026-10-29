@@ -87,9 +87,10 @@ Building for real consoles: [`ps5/README.md`](ps5/README.md#building) (PS5 paylo
 - [x] Mac app (SwiftUI): extraction, conversion → `.exfat`, pairing, copies in progress, history, SSD eject
 - [ ] Mac app tested on a real Mac (conversion with `hdiutil`, local network permission, eject)
 - [x] PS5 payload: web interface, resumable copies to `homebrew/`, `.pkg` through the system installer, queue that resumes on its own, speed diagnostics; tested against both servers (test build)
-- [ ] PS5 payload tested on a real console
+- [x] PS5 payload tested on a real console (folder and `.exfat` copied to `homebrew/`, game launched through ShadowMountPlus)
 - [x] Ponte Switch app: written and tested on the PC against the reference
-- [ ] Switch app tested on a real console (screen, reading what is installed via ns/ncm, installing through yati)
+- [x] Switch app tested on a real console (screen, reading what is installed via ns/ncm, installing through yati)
+- [ ] DLC for PS5 games as a folder or image ([spec §9](protocol/SPEC.en.md#9-open-items))
 - [x] Documentation in English and Portuguese
 
 Open items in the specification: [spec §9](protocol/SPEC.en.md#9-open-items).

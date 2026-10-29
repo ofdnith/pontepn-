@@ -68,11 +68,13 @@ python3 tools/check_docs.py                              # documentação: pares
 - [x] App do Mac: biblioteca, extração, conversão → `.exfat`, pareamento, atenção, cópias em andamento, histórico, ejetar o SSD
 - [ ] App do Mac testado num Mac de verdade (conversão com `hdiutil`, permissão de rede local, ejetar)
 - [x] Payload PS5: interface web, cópia com retomada para `homebrew/`, `.pkg` pelo instalador do sistema; ícone na tela inicial; pausa/retomada automática com fila guardada em `/data/ponte/queue.json`; velocidade, avisos a cada 25% e diagnóstico de velocidade; depois de cada cópia pede ao ShadowMountPlus uma varredura nova (`mounter_rescan`, API local `127.0.0.1:10101`)
-- [ ] Payload PS5 testado num console de verdade
+- [x] Payload PS5 testado num console de verdade (cópia de pasta e de `.exfat`; um jogo em pasta só abriu depois de convertido para `.exfat`)
 - [x] App Ponte do Switch (`switch/app`): escrito e testado no PC contra a referência; durante a instalação a tela apaga (Y) e o app não é suspenso no menu HOME (`App::SetRunInBackground`, só no modo aplicativo); não pula "já instalado" pelo ncm e, se o yati não instalar nada, o item termina como `failed` com o motivo
-- [ ] App do Switch testado no console (tela, leitura do instalado via ns/ncm, instalação pelo yati, cópia com o menu HOME aberto)
+- [x] App do Switch testado no console: tela, leitura do instalado via ns/ncm, instalação pelo yati
+- [ ] App do Switch: cópia com o menu HOME aberto ainda não confirmada no console
+- [ ] DLC de jogos de PS5 em pasta ou imagem (SPEC §9; a fazer)
 
-Em aberto na SPEC (§9): ler metadados de dentro de `.exfat`/`.ffpkg`/`.ffpfs` sem arquivo lateral, metadados de XCI com `prod.keys`, carregador de pastas de PS4, registrar jogos direto pelo payload.
+Em aberto na SPEC (§9): ler metadados de dentro de `.exfat`/`.ffpkg`/`.ffpfs` sem arquivo lateral, metadados de XCI com `prod.keys`, carregador de pastas de PS4, registrar jogos direto pelo payload, DLC de jogos de PS5 em pasta ou imagem.
 
 ## Como o app do Mac funciona (resumo)
 

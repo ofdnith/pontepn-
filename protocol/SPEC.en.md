@@ -410,11 +410,13 @@ Other client details:
 - [ ] Full XCI/XCZ metadata and Switch game names (require `prod.keys`).
 - [ ] Loader for `folder_ps4`.
 - [ ] Register games directly from the payload, without depending on the external mounter.
+- [ ] DLC for PS5 games as a folder or image: today folders and images are always `base` (§1.1) and PS5 `.pkg` is blocked on 13.60. How the mounter handles standalone DLC must be known before defining `kind`, identification and destination. (PS4 DLC as `.pkg` and Switch DLC already work.)
 - [x] Copy progress visible on the Mac in real time — solved on the Mac side only, without changing the protocol (§7.6).
 
 ## 10. History
 
 **draft 4** (the protocol is still `1`: compatible additions only)
+- §9: DLC for PS5 games as a folder or image added as an open item. No protocol change.
 - Conversion to `.exfat` (§7.4), `sha256` verification (§7.5) and archive extraction (§1.3) become optional and off by default in the Mac app; without a hash, the client checks only the size.
 - §8.1: rules for the Switch client, the Ponte app (installation straight from the network, no temporary area; content of `console/state` on the Switch).
 - The file route accepts `?token=` and a name at the end, so the PS5 installer can download `.pkg` directly from the Mac (§5.5, §8 item 7).

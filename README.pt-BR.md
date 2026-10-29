@@ -87,9 +87,10 @@ Compilar para o console de verdade: [`ps5/README.pt-BR.md`](ps5/README.pt-BR.md#
 - [x] App do Mac (SwiftUI): extração, conversão → `.exfat`, pareamento, cópias em andamento, histórico, ejetar o SSD
 - [ ] App do Mac testado num Mac de verdade (conversão com `hdiutil`, permissão de rede local, ejetar)
 - [x] Payload PS5: interface web, cópia com retomada para `homebrew/`, `.pkg` pelo instalador do sistema, fila que retoma sozinha, diagnóstico de velocidade; testado contra os dois servidores (versão de teste)
-- [ ] Payload PS5 testado num console de verdade
+- [x] Payload PS5 testado num console de verdade (cópia de pasta e de `.exfat` para `homebrew/`, jogo aberto pelo ShadowMountPlus)
 - [x] App Ponte do Switch: escrito e testado no PC contra a referência
-- [ ] App do Switch testado num console de verdade (tela, leitura do instalado via ns/ncm, instalação pelo yati)
+- [x] App do Switch testado num console de verdade (tela, leitura do instalado via ns/ncm, instalação pelo yati)
+- [ ] DLC de jogos de PS5 em pasta ou imagem ([SPEC §9](protocol/SPEC.md#9-em-aberto))
 - [x] Documentação em inglês e português
 
 Em aberto na especificação: [SPEC §9](protocol/SPEC.md#9-em-aberto).
