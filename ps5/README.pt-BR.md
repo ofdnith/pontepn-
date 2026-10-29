@@ -51,6 +51,8 @@ Progresso do teste em andamento (o que a página usa para a barra): `GET /api/di
 
 Ajustes para testar sem recompilar (na mesma seção, ficam em `/data/ponte/settings.json`): **Buffer TCP** (`rcvbuf_kb`, 0 = padrão do sistema; se o sistema recusar o valor, o payload tenta a metade até 256 KB) e **Bloco da cópia** (`chunk_kb`).
 
+Montador: depois de mover um jogo para `homebrew/`, o payload pede ao ShadowMountPlus uma varredura nova (`POST /api/v1/scan` com `{"reset_attempts":true}`, na API local dele, que vem ligada no ShadowMountPlus 1.7). Ele já varre sozinho a cada ~15 s; o pedido só adianta e zera as tentativas que tinham falhado (útil ao substituir um jogo). O endereço fica em `mounter_rescan` (padrão `127.0.0.1:10101/api/v1/scan`; vazio = não pede), editável em **Cópias → Montador (ShadowMountPlus)**. Se o montador não responder, a cópia continua valendo e o motivo vai para `/data/ponte/ponte.log`.
+
 ## Interface
 
 Feita para a TV (1920×1080, controle do PS5) e para o celular: letras e botões maiores na TV (botões com pelo menos 48 px de altura), biblioteca e cópias lado a lado em telas largas, uma coluna no celular. A página atualiza a lista de cópias sem refazê-la, então o foco do controle não salta de Pausar/Cancelar. Ela pergunta antes de Cancelar, Substituir e "Outro Mac" (que apaga o pareamento), e para de consultar o payload enquanto está em segundo plano. Os erros dizem o que aconteceu e o que fazer.

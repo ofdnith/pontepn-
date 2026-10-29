@@ -29,6 +29,11 @@ extern int jobs_notify_progress;
 /* Tamanho de cada buffer da cópia (bytes): a rede enche um buffer inteiro antes de ele ir ao disco. */
 extern int jobs_chunk_bytes;
 
+/* Depois de mover um jogo para homebrew/, pede ao montador uma varredura nova (ver ps5/README.md).
+ * "host:porta/caminho" (POST com {"reset_attempts":true}); vazio = não pede. Padrão: a API local
+ * do ShadowMountPlus 1.7 (127.0.0.1:10101/api/v1/scan). */
+extern char jobs_mounter_rescan[160];
+
 /* Para testes: falha a cópia depois de N bytes (simula a conexão caindo). */
 extern int64_t jobs_test_fail_after;
 /* Para testes: estraga um byte dos próximos N arquivos baixados (simula dado corrompido). */

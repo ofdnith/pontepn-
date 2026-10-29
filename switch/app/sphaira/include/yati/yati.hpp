@@ -13,6 +13,7 @@
 #include "ui/progress_box.hpp"
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace sphaira::yati {
@@ -69,6 +70,14 @@ struct Config {
     std::vector<u64> title_ids{};
 };
 
+// Ponte: o que a instalação fez com cada conteúdo (cnmt) do arquivo.
+struct Outcome {
+    u32 installed{};
+    u32 skipped{};
+    // motivo do último conteúdo pulado, em inglês (vai pela i18n na tela).
+    std::string skip_reason{};
+};
+
 // overridable options, set to avoid
 struct ConfigOverride {
     std::optional<bool> sd_card_install{};
@@ -84,6 +93,16 @@ struct ConfigOverride {
     // installs only the content whose id is listed, skipping the rest of the
     // container. on a random access source a skipped content costs one cnmt nca.
     std::vector<u64> title_ids{};
+
+    // Ponte: o Mac já decidiu pelo que o console diz ter instalado (registros
+    // do ns). um registro velho no ncm, sem jogo de verdade, não deve fazer o
+    // yati pular a instalação em silêncio.
+    std::optional<bool> skip_if_already_installed{};
+
+    // Ponte: preenchido no fim, para quem chamou saber se algo foi instalado.
+    // um conteúdo pulado (já instalado, versão menor, opção "pular base"...)
+    // termina com sucesso no yati, mas não instalou nada.
+    Outcome* outcome{};
 };
 
 Result InstallFromFile(ui::ProgressBox* pbox, fs::Fs* fs, const fs::FsPath& path, const ConfigOverride& override = {});

@@ -51,6 +51,8 @@ Progress of the test in progress (what the page uses for the bar): `GET /api/dia
 
 Settings for testing without rebuilding (in the same section, kept in `/data/ponte/settings.json`): **Buffer TCP** (TCP buffer, `rcvbuf_kb`, 0 = system default; if the system refuses the value, the payload tries half, down to 256 KB) and **Bloco da cópia** (copy block, `chunk_kb`).
 
+Mounter: after moving a game to `homebrew/`, the payload asks ShadowMountPlus for a fresh scan (`POST /api/v1/scan` with `{"reset_attempts":true}`, on its local API, which is on by default in ShadowMountPlus 1.7). It already scans on its own every ~15 s; the request only brings that forward and clears earlier failed attempts (useful when replacing a game). The address is in `mounter_rescan` (default `127.0.0.1:10101/api/v1/scan`; empty = don't ask), editable under **Cópias → Montador (ShadowMountPlus)**. If the mounter doesn't answer, the copy still stands and the reason goes to `/data/ponte/ponte.log`.
+
 ## Interface
 
 Made for the TV (1920×1080, PS5 controller) and for the phone: bigger text and buttons on the TV (buttons at least 48 px tall), library and copies side by side on wide screens, a single column on the phone. The page updates the list of copies without rebuilding it, so the controller focus does not jump away from Pause/Cancel. It asks before Cancelar, **Substituir** (replace) and "Outro Mac" (another Mac, which deletes the pairing), and stops polling the payload while it is in the background. Errors say what happened and what to do.

@@ -465,6 +465,47 @@ def run(template: str, work: Path) -> list:
             (lib / "PPSA01234" / "data" / "big.bin").read_bytes()
 
     @case
+    def pede_varredura_ao_montador():
+        # depois de mover para homebrew/, o payload pede ao ShadowMountPlus uma varredura nova
+        # (POST /api/v1/scan com reset_attempts), no endereço dos ajustes.
+        import http.server
+        import threading
+        got = []
+
+        class Smp(http.server.BaseHTTPRequestHandler):
+            def do_POST(self):
+                body = self.rfile.read(int(self.headers.get("Content-Length") or 0))
+                got.append((self.path, json.loads(body or b"{}")))
+                out = b'{"status":0,"scan_queued":true}'
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(out)))
+                self.end_headers()
+                self.wfile.write(out)
+
+            def log_message(self, *a):
+                pass
+
+        smp = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Smp)
+        threading.Thread(target=smp.serve_forever, daemon=True).start()
+        try:
+            addr = f"127.0.0.1:{smp.server_address[1]}/api/v1/scan"
+            status, st = p.post("/api/settings", {"mounter_rescan": addr})
+            assert status == 200 and st["mounter_rescan"] == addr, st
+            cat = p.get("/api/catalog")[1]
+            folder = by_kind(cat, "folder")
+            seq = last_seq(p)
+            status, r = p.post("/api/copy", {"ids": [folder["id"]], "storage": "usb0", "replace": True})
+            assert status == 200 and r["added"] == 1, r
+            j = wait_job(p, folder["id"], seq)
+            assert j["state"] == "done", j
+            wait_until(lambda: got or None, timeout=10)
+            assert got == [("/api/v1/scan", {"reset_attempts": True})], got
+        finally:
+            p.post("/api/settings", {"mounter_rescan": ""})
+            smp.shutdown()
+
+    @case
     def copia_sem_conferencia_sha256():
         # Mac com a conferência desligada (o padrão no app): sem hashes, o console confere só o
         # tamanho e não passa pela fase de conferência.

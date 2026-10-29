@@ -986,13 +986,26 @@ void Menu::StartInstall(std::vector<pn::CatalogItem> items, bool sd) {
                 // and a dropped connection resumes with Range (SPEC §8.1).
                 yati::source::Http source{client.FileUrl(item.id, detail.files[0].index), client.FileHeaders(detail.item.revision), pbox->GetToken()};
 
+                yati::Outcome outcome{};
                 yati::ConfigOverride config_override{};
                 config_override.sd_card_install = sd;
+                // o estado vem do Mac, pelos registros do ns: um resto no ncm
+                // (jogo apagado pela metade) não pode virar "já instalado".
+                config_override.skip_if_already_installed = false;
+                config_override.outcome = &outcome;
                 rc = yati::InstallFromSource(pbox, &source, pn::InstallPathFor(detail.item), config_override);
                 if (R_FAILED(rc)) {
                     char buf[64];
                     std::snprintf(buf, sizeof(buf), "yati 0x%X", rc);
                     detail_text = buf;
+                } else if (!outcome.installed) {
+                    // o yati termina "com sucesso" quando pula tudo: sem isto a
+                    // tela dizia "concluída" depois de baixar só o cabeçalho.
+                    rc = Result_YatiContainerNotFound;
+                    detail_text = outcome.skipped
+                        ? "Nothing was installed: "_i18n + i18n::get(outcome.skip_reason)
+                        : "Nothing was installed: no content found in the file"_i18n;
+                    log_write("[PONTE] nada instalado de %s (%u pulados): %s\n", item.id.c_str(), outcome.skipped, outcome.skip_reason.c_str());
                 }
             }
 
