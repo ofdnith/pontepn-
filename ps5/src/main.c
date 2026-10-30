@@ -73,9 +73,6 @@ static void apply_settings(cJSON *j) {
     if (cJSON_IsNumber(v) && v->valueint >= 0 && v->valueint <= 32768) http_rcvbuf = v->valueint << 10;
     v = cJSON_GetObjectItem(j, "chunk_kb");
     if (cJSON_IsNumber(v) && v->valueint >= 64 && v->valueint <= 65536) jobs_chunk_bytes = v->valueint << 10;
-    v = cJSON_GetObjectItem(j, "mounter_rescan");
-    if (cJSON_IsString(v) && strlen(v->valuestring) < sizeof(jobs_mounter_rescan))
-        snprintf(jobs_mounter_rescan, sizeof(jobs_mounter_rescan), "%s", v->valuestring);
 }
 
 static void load_settings(void) {
@@ -106,7 +103,6 @@ static cJSON *settings_json(void) {
     cJSON_AddBoolToObject(j, "notify_progress", jobs_notify_progress);
     cJSON_AddNumberToObject(j, "rcvbuf_kb", http_rcvbuf >> 10);
     cJSON_AddNumberToObject(j, "chunk_kb", jobs_chunk_bytes >> 10);
-    cJSON_AddStringToObject(j, "mounter_rescan", jobs_mounter_rescan);
     return j;
 }
 
