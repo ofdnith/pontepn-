@@ -90,7 +90,6 @@ int jobs_test_corrupt = 0;
 int jobs_test_slow_ms = 0;
 int jobs_notify_progress = 1;
 int jobs_chunk_bytes = 4 << 20;
-char jobs_mounter_rescan[160] = "127.0.0.1:10101/api/v1/scan";
 
 static void save_queue(void);
 
@@ -911,51 +910,6 @@ static void send_report(const mac_t *mac, const job_snap_t *s, const char *resul
     cJSON_Delete(b);
 }
 
-/* Pede ao montador uma varredura nova de homebrew/ (ShadowMountPlus: POST /api/v1/scan).
- * Sozinho ele já varre a cada ~15 s; isto só adianta e zera as tentativas que falharam antes
- * (reset_attempts), para um jogo substituído não ficar esperando. Falhar aqui não muda o
- * resultado da cópia: o jogo já está em homebrew/. */
-static void mounter_rescan(int seq) {
-    char spec[sizeof(jobs_mounter_rescan)];
-    pthread_mutex_lock(&g_lock);
-    snprintf(spec, sizeof(spec), "%s", jobs_mounter_rescan);
-    pthread_mutex_unlock(&g_lock);
-    if (!spec[0]) return;
-
-    char host[64] = "", path[128] = "/";
-    int port = 80;
-    const char *slash = strchr(spec, '/');
-    size_t hostlen = slash ? (size_t)(slash - spec) : strlen(spec);
-    if (slash) snprintf(path, sizeof(path), "%s", slash);
-    char hostport[sizeof(host)];
-    if (hostlen >= sizeof(hostport)) hostlen = sizeof(hostport) - 1;
-    memcpy(hostport, spec, hostlen);
-    hostport[hostlen] = 0;
-    char *colon = strrchr(hostport, ':');
-    if (colon) {
-        *colon = 0;
-        port = atoi(colon + 1);
-    }
-    memcpy(host, hostport, sizeof(host));
-    if (!host[0] || port <= 0 || port > 65535) {
-        plat_log("[job %d] montador: endereço inválido nos ajustes (%s)", seq, spec);
-        return;
-    }
-
-    static const char body[] = "{\"reset_attempts\":true}";
-    http_resp_t r;
-    if (http_open(host, port, "POST", path, "Content-Type: application/json\r\n", body, sizeof(body) - 1, &r, 5) != 0) {
-        plat_log("[job %d] montador: sem resposta em %s:%d (ShadowMountPlus rodando com a API ligada?)", seq, host, port);
-        return;
-    }
-    char *text = NULL;
-    size_t len = 0;
-    http_read_all(&r, &text, &len, 4096);
-    plat_log("[job %d] montador: varredura pedida, HTTP %d %s", seq, r.status, text ? text : "");
-    free(text);
-    http_close(&r);
-}
-
 /* Instala um .pkg: o instalador do sistema baixa direto do Mac (SPEC §8 item 7). */
 static result_t run_pkg(ctx_t *c, cJSON *detail) {
     cJSON *files = cJSON_GetObjectItem(detail, "files");
@@ -1312,7 +1266,6 @@ static void run_job(job_t *j) {
     if (res == RES_OK) {
         send_report(&c->mac, &snap, is_pkg(snap.kind) ? "installed" : "copied", NULL);
         plat_notify(is_pkg(snap.kind) ? "Ponte: instalando %s" : "Ponte: %s copiado", snap.title);
-        if (!is_pkg(snap.kind)) mounter_rescan(snap.seq);
     } else if (res == RES_CANCEL) {
         send_report(&c->mac, &snap, "cancelled", NULL);
     } else {
