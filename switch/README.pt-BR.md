@@ -17,7 +17,7 @@ Se a tela só piscar e voltar, o app não chegou a abrir: confira se copiou o `.
 ## Como fica
 
 ```
-Ponte                                            MacBook do João · 192.168.0.12:47101
+Ponte  192.168.0.12:47101 • 3 itens • 2 marcados (15.3 GB)          microSD 212.0 GB
 ──────────────────────────────────────────────────────────────────────────────────────
  [■] [ícone] Jogo Legal                                                         Novo
              Jogo • NSP • 14.2 GB
@@ -27,7 +27,6 @@ Ponte                                            MacBook do João · 192.168.0.1
        DLC • NSZ • 210 MB
  [ ] [ícone] Outro Jogo                                     Mais nova que a instalada
 ──────────────────────────────────────────────────────────────────────────────────────
- 3 itens • 2 marcados (15.3 GB) • microSD: 212 GB livres
  A Marcar   X Instalar 2   Y Atualizar   − Limpar   B Voltar   ZR Opções   + Sair
 ```
 

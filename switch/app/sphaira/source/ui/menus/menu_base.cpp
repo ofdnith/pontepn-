@@ -156,7 +156,18 @@ void MenuBase::Draw(NVGcontext* vg, Theme* theme) {
         NVG_ALIGN_LEFT | NVG_ALIGN_BOTTOM, theme->GetColour(ThemeEntryID_TEXT), m_title);
     m_scroll_title_sub_heading.Draw(vg, true, title_sub_x, start_y, title_sub_width, 16.f,
         NVG_ALIGN_LEFT | NVG_ALIGN_BOTTOM, theme->GetColour(ThemeEntryID_TEXT_INFO), m_title_sub_heading);
-    m_scroll_sub_heading.Draw(vg, true, 80, 675, text_w - 160, 18, NVG_ALIGN_LEFT | NVG_ALIGN_TOP, theme->GetColour(ThemeEntryID_TEXT), m_sub_heading.c_str());
+    // Ponte: o subtítulo divide a linha de baixo com os comandos, que crescem da direita
+    // para a esquerda; com muitos comandos (ou textos longos, como em português) eles
+    // chegavam por cima do subtítulo. Ele agora para antes do comando mais à esquerda.
+    constexpr float sub_heading_x = 80.f;
+    float sub_heading_w = text_w - 160;
+    for (const auto& e : GetUiButtons()) {
+        const auto button_left = e.m_button_pos.x - e.m_button_pos.w;
+        sub_heading_w = std::min(sub_heading_w, button_left - 25.f - sub_heading_x);
+    }
+    if (sub_heading_w > 0.f) {
+        m_scroll_sub_heading.Draw(vg, true, sub_heading_x, 675, sub_heading_w, 18, NVG_ALIGN_LEFT | NVG_ALIGN_TOP, theme->GetColour(ThemeEntryID_TEXT), m_sub_heading.c_str());
+    }
 }
 
 } // namespace sphaira::ui::menu

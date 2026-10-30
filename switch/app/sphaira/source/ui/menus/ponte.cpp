@@ -448,21 +448,22 @@ void Menu::ApplyActions() {
 }
 
 void Menu::UpdateSubheading() {
+    // A linha de baixo fica só para os comandos (são até 7 e, em português, ocupam
+    // quase a largura toda); as contagens vão para o cabeçalho, ao lado do título.
+    // O espaço livre no microSD já aparece no canto de cima, na barra do motor.
+    SetSubHeading("");
+
     if (m_mode == Mode::Macs) {
-        SetTitleSubHeading("Ponte: games from your Mac"_i18n);
-        SetSubHeading(std::to_string(m_macs.size()) + " " + "Mac(s)"_i18n);
+        SetTitleSubHeading("Ponte: games from your Mac"_i18n + "  •  " + std::to_string(m_macs.size()) + " " + "Mac(s)"_i18n);
         return;
     }
 
-    SetTitleSubHeading(m_server.address);
-
     const auto chosen = ChosenItems();
-    std::string sub = std::to_string(m_catalog.items.size()) + " " + "items"_i18n;
+    std::string sub = m_server.address + "  •  " + std::to_string(m_catalog.items.size()) + " " + "items"_i18n;
     if (!chosen.empty()) {
         sub += "  •  " + std::to_string(chosen.size()) + " " + "selected"_i18n + " (" + utils::formatSizeStorage(TotalSize(m_catalog.items, chosen)) + ")";
     }
-    sub += "  •  microSD: " + utils::formatSizeStorage(FreeOn("sd")) + " " + "free"_i18n;
-    SetSubHeading(sub);
+    SetTitleSubHeading(sub);
 }
 
 void Menu::LoadSaved() {
