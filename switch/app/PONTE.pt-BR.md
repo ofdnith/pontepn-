@@ -29,6 +29,7 @@ Código do app **Ponte** para o Switch. É o [Sphaira](https://github.com/ITotal
 - `sphaira/source/app.cpp` (`App::Loop`): fora de foco não desenha e dorme 50 ms por volta (sem o vsync o laço giraria sem parar).
 - `sphaira/source/ui/progress_box.cpp` (+ `.hpp`): linha de dica opcional acima dos botões; velocidade calculada pelo tempo real entre amostras (fora de foco a caixa não é desenhada).
 - `sphaira/source/ui/menus/main_menu.cpp`: registra a tela (só vale se o menu do Sphaira for usado).
+- `sphaira/source/ui/menus/menu_base.cpp`: o subtítulo da linha de baixo para antes do comando mais à esquerda. Antes, com muitos comandos ou textos longos (português), os comandos eram desenhados por cima dele.
 - `assets/romfs/i18n/pt.json`: textos em português.
 - `.github/` do Sphaira removido; o CI é o `.github/workflows/switch.yml` deste repositório.
 

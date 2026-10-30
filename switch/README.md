@@ -17,7 +17,7 @@ If the screen just flashes and goes back, the app never opened: check that you c
 ## What it looks like
 
 ```
-Ponte                                             João's MacBook · 192.168.0.12:47101
+Ponte  192.168.0.12:47101 • 3 items • 2 selected (15.3 GB)           microSD 212.0 GB
 ──────────────────────────────────────────────────────────────────────────────────────
  [■] [icon] Cool Game                                                             New
             Game • NSP • 14.2 GB
@@ -27,7 +27,6 @@ Ponte                                             João's MacBook · 192.168.0.1
        DLC • NSZ • 210 MB
  [ ] [icon] Another Game                                      Newer than installed
 ──────────────────────────────────────────────────────────────────────────────────────
- 3 items • 2 selected (15.3 GB) • microSD: 212 GB free
  A Select   X Install 2   Y Update   − Clear   B Back   ZR Options   + Exit
 ```
 

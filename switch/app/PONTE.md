@@ -29,6 +29,7 @@ Code for the **Ponte** app for the Switch. It is [Sphaira](https://github.com/IT
 - `sphaira/source/app.cpp` (`App::Loop`): when out of focus it does not draw and sleeps 50 ms per iteration (without vsync the loop would spin nonstop).
 - `sphaira/source/ui/progress_box.cpp` (+ `.hpp`): optional hint line above the buttons; speed computed from the real time between samples (out of focus the box is not drawn).
 - `sphaira/source/ui/menus/main_menu.cpp`: registers the screen (only matters if the Sphaira menu is used).
+- `sphaira/source/ui/menus/menu_base.cpp`: the bottom-line subheading stops before the leftmost button hint. Before, with many buttons or long labels (Portuguese), the hints were drawn on top of it.
 - `assets/romfs/i18n/pt.json`: Portuguese texts.
 - Sphaira's `.github/` removed; CI is this repository's `.github/workflows/switch.yml`.
 
