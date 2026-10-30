@@ -37,7 +37,7 @@ option(ENABLE_DEVOPTAB_SFTP "" OFF)
 
 set(sphaira_VERSION 1.0.7)
 # versão do app Ponte (a do Sphaira acima é a do motor e fica como está)
-set(PONTE_VERSION 1.0.1)
+set(PONTE_VERSION 1.0.2)
 
 project(sphaira
     VERSION ${sphaira_VERSION}
