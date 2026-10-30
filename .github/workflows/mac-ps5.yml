@@ -24,7 +24,8 @@ jobs:
 
   mac:
     name: Mac (Swift)
-    runs-on: macos-14
+    # macos-14 é aposentada pelo GitHub em 2 nov 2026; o app continua para macOS 13+ (Package.swift)
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v5
       # erros e falhas também viram anotações, que aparecem na página do PR sem abrir o log
