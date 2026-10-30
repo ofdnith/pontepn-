@@ -3,7 +3,7 @@
 #define PONTE_PONTE_H
 
 /* Versão do payload (aparece na interface e no pareamento). */
-#define PONTE_VERSION "1.0.0"
+#define PONTE_VERSION "1.0.1"
 
 #include "vendor/cJSON.h"
 
