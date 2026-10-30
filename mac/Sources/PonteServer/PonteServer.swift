@@ -2,7 +2,7 @@ import Foundation
 import PonteCore
 
 public let ponteProtocolVersion = 1
-public let ponteServerVersion = "1.0.1"
+public let ponteServerVersion = "1.0.2"
 
 /// Erro de API no formato da SPEC §6.
 public struct APIError: Error {

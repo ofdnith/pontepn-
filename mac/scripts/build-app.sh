@@ -8,7 +8,7 @@
 set -eu
 
 cd "$(dirname "$0")/.."
-VERSION="1.0.1"
+VERSION="1.0.2"
 APP="build/Ponte.app"
 
 swift build -c release --product PonteMac
